@@ -14,7 +14,7 @@ dev:
 	./bin/phpsa check -vvv ./sandbox
 
 tests-local:
-	./vendor/bin/phpunit -v
+	php -d xdebug.profiler_enable=1 ./vendor/bin/phpunit -v
 
 # Alias for tests-local
 tests: tests-local
@@ -24,7 +24,7 @@ tests-ci:
 
 # For renewing config and documentation when analyzers were changed
 analyzers:
-	./bin/phpsa config:dump-reference > .phpsa.yml	
+	./bin/phpsa config:dump-reference > .phpsa.yml
 	./bin/phpsa config:dump-documentation > docs/05_Analyzers.md
 
 test: tests-local cs

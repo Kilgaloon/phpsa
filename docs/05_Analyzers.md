@@ -119,6 +119,10 @@ Checks for use of deprecated functions and gives alternatives if available.
 
 Format string has same number of placeholders as parameters are passed into and forbid invalid type formats.
 
+#### duplicated_variables_in_use
+
+Check for duplicate variables in use statement
+
 #### magic_method_parameters
 
 Checks that magic methods have the right amount of parameters.

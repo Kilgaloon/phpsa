@@ -87,7 +87,7 @@ class Factory
 
         $instanciate = function ($passClass) use ($analyzersConfig) {
             $passName = $passClass::getMetadata()->getName();
-            
+
             return new $passClass($analyzersConfig[$passName]);
         };
 
@@ -95,9 +95,11 @@ class Factory
         $analyzer->registerExpressionPasses(
             array_map($instanciate, array_filter(self::getExpressionPasses(), $filterEnabled))
         );
+
         $analyzer->registerStatementPasses(
             array_map($instanciate, array_filter(self::getStatementPasses(), $filterEnabled))
         );
+
         $analyzer->registerScalarPasses(
             array_map($instanciate, array_filter(self::getScalarPasses(), $filterEnabled))
         );
@@ -133,7 +135,7 @@ class Factory
             AnalyzerPass\Statement\ForCondition::class,
             AnalyzerPass\Statement\PropertyDefinitionDefaultValue::class,
             AnalyzerPass\Statement\ReturnAndYieldInOneMethod::class,
-            AnalyzerPass\Statement\ReturnVoid::class,
+            AnalyzerPass\Statement\ReturnVoid::class
         ];
     }
 
@@ -175,6 +177,7 @@ class Factory
             AnalyzerPass\Expression\FunctionCall\UnsafeUnserialize::class,
             AnalyzerPass\Expression\FunctionCall\DeprecatedFunctions::class,
             AnalyzerPass\Expression\FunctionCall\FunctionStringFormater::class,
+            AnalyzerPass\Expression\FunctionCall\DuplicatedVariablesInUse::class,
         ];
     }
 
