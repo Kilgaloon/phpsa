@@ -5,12 +5,9 @@
 
 namespace PHPSA\Command;
 
-use PhpParser\ParserFactory;
 use PHPSA\Analyzer;
 use PHPSA\Application;
 use PHPSA\Compiler;
-use PHPSA\Configuration;
-use PHPSA\ConfigurationLoader;
 use PHPSA\Context;
 use PHPSA\Definition\FileParser;
 use RecursiveDirectoryIterator;
@@ -18,7 +15,6 @@ use RecursiveIteratorIterator;
 use SplFileInfo;
 use FilesystemIterator;
 use Symfony\Component\Config\FileLocator;
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -31,7 +27,7 @@ use Webiny\Component\EventManager\EventManager;
  * @package PHPSA\Command
  * @method Application getApplication();
  */
-class CheckCommand extends Command
+class CheckCommand extends AbstractCommand
 {
 
     /**
@@ -42,7 +38,6 @@ class CheckCommand extends Command
         $this
             ->setName('check')
             ->setDescription('Runs compiler and analyzers on all files in path')
-            ->addOption('blame', null, InputOption::VALUE_NONE, 'Git blame author for bad code ;)')
             ->addOption('config-file', null, InputOption::VALUE_REQUIRED, 'Path to the configuration file.')
             ->addArgument('path', InputArgument::OPTIONAL, 'Path to check file or directory', '.')
             ->addOption(
@@ -79,45 +74,13 @@ class CheckCommand extends Command
         $configDir = realpath($input->getArgument('path'));
         $application->configuration = $this->loadConfiguration($configFile, $configDir);
 
-        $parserStr = $application->configuration->getValue('parser', 'prefer-7');
-        switch ($parserStr) {
-            case 'prefer-7':
-                $languageLevel = ParserFactory::PREFER_PHP7;
-                break;
-            case 'prefer-5':
-                $languageLevel = ParserFactory::PREFER_PHP5;
-                break;
-            case 'only-7':
-                $languageLevel = ParserFactory::ONLY_PHP7;
-                break;
-            case 'only-5':
-                $languageLevel = ParserFactory::ONLY_PHP5;
-                break;
-            default:
-                $languageLevel = ParserFactory::PREFER_PHP7;
-                break;
-        }
+        $parser = $this->createParser($application);
 
-        $parser = (new ParserFactory())->create($languageLevel, new \PhpParser\Lexer\Emulative([
-            'usedAttributes' => [
-                'comments',
-                'startLine',
-                'endLine',
-                'startTokenPos',
-                'endTokenPos'
-            ]
-        ]));
+        $output->writeln('Used config file: ' . $application->configuration->getPath());
 
         $em = EventManager::getInstance();
         Analyzer\Factory::factory($em, $application->configuration);
         $context = new Context($output, $application, $em);
-
-        /**
-         * Store option's in application's configuration
-         */
-        if ($input->getOption('blame')) {
-            $application->configuration->setValue('blame', true);
-        }
 
         $fileParser = new FileParser(
             $parser,
@@ -181,33 +144,5 @@ class CheckCommand extends Command
 
         $output->writeln('');
         $output->writeln('Memory usage: ' . $this->getMemoryUsage(false) . ' (peak: ' . $this->getMemoryUsage(true) . ') MB');
-    }
-
-    /**
-     * @param boolean $type
-     * @return float
-     */
-    protected function getMemoryUsage($type)
-    {
-        return round(memory_get_usage($type) / 1024 / 1024, 2);
-    }
-
-    /**
-     * @param string $configFile
-     * @param string $configurationDirectory
-     *
-     * @return Configuration
-     */
-    protected function loadConfiguration($configFile, $configurationDirectory)
-    {
-        $loader = new ConfigurationLoader(new FileLocator([
-            getcwd(),
-            $configurationDirectory
-        ]));
-
-        return new Configuration(
-            $loader->load($configFile),
-            Analyzer\Factory::getPassesConfigurations()
-        );
     }
 }
